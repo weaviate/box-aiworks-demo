@@ -1,0 +1,4 @@
+weaviate-client[agents]==4.16.9
+box-sdk-gen
+requests
+python-dotenv
