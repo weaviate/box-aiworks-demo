@@ -2,13 +2,9 @@ import weaviate
 from weaviate.auth import AuthApiKey
 from dotenv import load_dotenv
 import os
-from box_sdk_gen import BoxClient, BoxDeveloperTokenAuth, CreateFolderParent
 
 # Load environment variables from .env file
 load_dotenv()
-
-# Box Developer Token (replace with your own)
-BOX_DEV_TOKEN = os.getenv('BOX_DEV_TOKEN')
 
 # Weaviate Instance URL and API Key (replace with your own)
 WEAVIATE_URL = os.getenv('WCD_URL')
@@ -16,10 +12,7 @@ WEAVIATE_API_KEY = os.getenv('WCD_API_KEY')
 
 # authentication and connect to WCD
 
-def init_clients(box_developer_token: str, weaviate_url: str, weaviate_api_key: str):
-    # Initialize Box Client
-    auth = BoxDeveloperTokenAuth(token=BOX_DEV_TOKEN)
-    box_client = BoxClient(auth=auth)
+def init_clients( weaviate_url: str, weaviate_api_key: str):
     
     # Initialize Weaviate Client with Cohere for vectorization
     weaviate_client = weaviate.connect_to_weaviate_cloud(
@@ -27,10 +20,10 @@ def init_clients(box_developer_token: str, weaviate_url: str, weaviate_api_key: 
         auth_credentials=AuthApiKey(WEAVIATE_API_KEY)
     )
     
-    return box_client, weaviate_client
+    return weaviate_client
 
-box_client, weaviate_client = init_clients(
-    BOX_DEV_TOKEN, WEAVIATE_URL, WEAVIATE_API_KEY
+weaviate_client = init_clients(
+    WEAVIATE_URL, WEAVIATE_API_KEY
 )
 print("Clients initialized successfully.")
 
