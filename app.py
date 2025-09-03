@@ -1,4 +1,4 @@
-# app.py - Fixed search endpoint
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -10,16 +10,13 @@ import os
 from datetime import datetime
 import logging
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
 load_dotenv()
 
 app = FastAPI(title="Weaviate Enterprise Search API", version="1.0.0")
 
-# CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -28,12 +25,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Weaviate connection
 WEAVIATE_URL = os.getenv('WCD_URL')
 WEAVIATE_API_KEY = os.getenv('WCD_API_KEY')
 
 def get_weaviate_client():
-    """Get a properly configured Weaviate client"""
     try:
         client = weaviate.connect_to_weaviate_cloud(
             cluster_url=WEAVIATE_URL,
@@ -44,12 +39,11 @@ def get_weaviate_client():
         logger.error(f"Failed to connect to Weaviate: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to connect to Weaviate: {str(e)}")
 
-# Pydantic models
 class SearchRequest(BaseModel):
     query: str
     tenant: str
-    search_type: str = "hybrid"  # keyword, vector, hybrid, generative
-    alpha: float = 0.5  # For hybrid search
+    search_type: str = "hybrid"
+    alpha: float = 0.5
     limit: int = 10
 
 class AgentRequest(BaseModel):
@@ -74,15 +68,12 @@ class TenantInfo(BaseModel):
     name: str
     document_count: int
 
-# API Endpoints
-
 @app.get("/")
 async def root():
     return {"message": "Weaviate Enterprise Search API"}
 
 @app.get("/tenants", response_model=List[TenantInfo])
 async def get_tenants():
-    """Get all available tenants with document counts"""
     client = None
     try:
         client = get_weaviate_client()
@@ -119,7 +110,6 @@ async def get_tenants():
 
 @app.get("/documents/{tenant}", response_model=List[DocumentResponse])
 async def get_documents(tenant: str, limit: int = 50):
-    """Get all documents for a specific tenant"""
     client = None
     try:
         client = get_weaviate_client()
@@ -134,9 +124,9 @@ async def get_documents(tenant: str, limit: int = 50):
             documents.append(DocumentResponse(
                 id=str(obj.uuid),
                 content=properties.get("content", "No content available"),
-                file_name=f"Document_{i+1}",  # Generate a name since it doesn't exist
-                chunk_index=i,                # Use index as chunk number
-                created_date="2024-01-01",    # Use a default date
+                file_name=f"Document_{i+1}",
+                chunk_index=i,
+                created_date="2024-01-01",
             ))
         
         logger.info(f"Retrieved {len(documents)} documents for tenant {tenant}")
@@ -153,7 +143,6 @@ async def get_documents(tenant: str, limit: int = 50):
 
 @app.post("/search", response_model=SearchResponse)
 async def search_documents(request: SearchRequest):
-    """Search documents with different search types"""
     client = None
     try:
         client = get_weaviate_client()
@@ -164,21 +153,18 @@ async def search_documents(request: SearchRequest):
         result = None
         
         if request.search_type == "keyword":
-            # Keyword search
             result = tenant_collection.query.bm25(
                 query=request.query,
                 limit=request.limit
             )
             
         elif request.search_type == "vector":
-            # Vector search
             result = tenant_collection.query.near_text(
                 query=request.query,
                 limit=request.limit
             )
             
         elif request.search_type == "hybrid":
-            # Hybrid search
             result = tenant_collection.query.hybrid(
                 query=request.query,
                 alpha=request.alpha,
@@ -186,7 +172,6 @@ async def search_documents(request: SearchRequest):
             )
             
         elif request.search_type == "generative":
-            # Generative search with RAG
             result = tenant_collection.query.generate(
                 single_prompt=f"Based on the following context, answer the question: {request.query}",
                 grouped_task="Summarize the key points from the search results",
@@ -196,15 +181,14 @@ async def search_documents(request: SearchRequest):
         else:
             raise HTTPException(status_code=400, detail="Invalid search type")
         
-        # FIXED: Generate proper values for missing fields
         for i, obj in enumerate(result.objects):
             properties = obj.properties or {}
             documents.append(DocumentResponse(
                 id=str(obj.uuid),
                 content=properties.get("content", "No content available"),
-                file_name=f"Search_Result_{i+1}",  # Generate a name
-                chunk_index=i,                     # Use index as chunk number
-                created_date="2024-01-01",         # Use a default date
+                file_name=f"Search_Result_{i+1}",
+                chunk_index=i,
+                created_date="2024-01-01",
                 score=getattr(obj, 'score', None)
             ))
         
@@ -228,14 +212,12 @@ async def search_documents(request: SearchRequest):
 
 @app.post("/query-agent", response_model=Dict)
 async def query_agent(request: AgentRequest):
-    """Query agent with RBAC and multi-tenancy"""
     client = None
     try:
         client = get_weaviate_client()
         docs = client.collections.get("Documents")
         tenant_collection = docs.with_tenant(request.tenant)
         
-        # Use generative search for now (agent setup would be more complex)
         result = tenant_collection.query.generate(
             single_prompt=f"Answer this question based on the available documents: {request.query}",
             limit=5
