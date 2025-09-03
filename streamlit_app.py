@@ -298,13 +298,30 @@ def main():
             
             for doc in st.session_state.search_results['documents']:
                 with st.container():
-                    st.markdown(f"""
-                    <div class="document-card">
-                        <h4> {doc['file_name']} (Chunk {doc['chunk_index']})</h4>
-                        <p><strong>Content:</strong> {doc['content'][:300]}...</p>
-                        <small>ID: {doc['id'][:8]}... | Date: {doc['created_date']}</small>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    # Check if this is a generated response
+                    is_generated = doc.get('file_name') == 'AI Generated Response'
+                    
+                    if is_generated:
+                        # Show full content for generated responses
+                        st.markdown(f"""
+                        <div class="document-card">
+                            <h4>🤖 {doc['file_name']}</h4>
+                            <p><strong>Generated Answer:</strong></p>
+                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 5px; margin: 1rem 0;">
+                                {doc['content']}
+                            </div>
+                            <small>Date: {doc['created_date']}</small>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        # Truncate regular documents
+                        st.markdown(f"""
+                        <div class="document-card">
+                            <h4> {doc['file_name']} (Chunk {doc['chunk_index']})</h4>
+                            <p><strong>Content:</strong> {doc['content']}</p>
+                            <small>ID: {doc['id'][:8]}... | Date: {doc['created_date']}</small>
+                        </div>
+                        """, unsafe_allow_html=True)
         
         elif st.session_state.current_view == "agent" and hasattr(st.session_state, 'agent_response') and st.session_state.agent_response:
             st.header("🤖 Agent Response")

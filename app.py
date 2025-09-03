@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import weaviate
 from weaviate.auth import AuthApiKey
+from weaviate.classes.config import Configure
+from weaviate.classes.generate import GenerativeConfig
 from dotenv import load_dotenv
 import os
 from datetime import datetime
@@ -27,17 +29,33 @@ app.add_middleware(
 
 WEAVIATE_URL = os.getenv('WCD_URL')
 WEAVIATE_API_KEY = os.getenv('WCD_API_KEY')
+ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_APIKEY')
 
 def get_weaviate_client():
     try:
+        # Add Anthropic API key to headers
+        headers = {}
+        if ANTHROPIC_API_KEY:
+            headers["X-Anthropic-Api-Key"] = ANTHROPIC_API_KEY
+            logger.info("Added Anthropic API key to headers")
+        
         client = weaviate.connect_to_weaviate_cloud(
             cluster_url=WEAVIATE_URL,
-            auth_credentials=AuthApiKey(WEAVIATE_API_KEY)
+            auth_credentials=AuthApiKey(WEAVIATE_API_KEY),
+            headers=headers
         )
         return client
     except Exception as e:
         logger.error(f"Failed to connect to Weaviate: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to connect to Weaviate: {str(e)}")
+
+def get_anthropic_generative_config():
+    """Get Anthropic generative configuration"""
+    return GenerativeConfig.anthropic(
+        model="claude-3-opus-20240229",
+        max_tokens=256,
+        temperature=0.7,
+    )
 
 class SearchRequest(BaseModel):
     query: str
@@ -172,15 +190,51 @@ async def search_documents(request: SearchRequest):
             )
             
         elif request.search_type == "generative":
-            result = tenant_collection.query.generate(
+            # Configure Anthropic for generative search at query time
+            gen_config = get_anthropic_generative_config()
+            
+            result = tenant_collection.generate.near_text(
+                query=request.query,
+                limit=request.limit,
                 single_prompt=f"Based on the following context, answer the question: {request.query}",
                 grouped_task="Summarize the key points from the search results",
-                limit=request.limit
+                generative_provider=gen_config
+            )
+            
+            # For generative search, only return the generated response
+            if hasattr(result, 'generated') and result.generated:
+                generated_text = result.generated
+                documents = [DocumentResponse(
+                    id="generated_response",
+                    content=generated_text,
+                    file_name="AI Generated Response",
+                    chunk_index=0,
+                    created_date=datetime.now().strftime("%Y-%m-%d"),
+                    score=1.0
+                )]
+            else:
+                # Fallback if no generated text
+                documents = [DocumentResponse(
+                    id="no_response",
+                    content="No response generated",
+                    file_name="No Response",
+                    chunk_index=0,
+                    created_date=datetime.now().strftime("%Y-%m-%d"),
+                    score=0.0
+                )]
+            
+            logger.info(f"Generative search completed: Generated response only")
+            return SearchResponse(
+                documents=documents,
+                total_count=len(documents),
+                search_type=request.search_type,
+                query=request.query
             )
             
         else:
             raise HTTPException(status_code=400, detail="Invalid search type")
         
+        # Handle non-generative search results
         for i, obj in enumerate(result.objects):
             properties = obj.properties or {}
             documents.append(DocumentResponse(
@@ -218,9 +272,14 @@ async def query_agent(request: AgentRequest):
         docs = client.collections.get("Documents")
         tenant_collection = docs.with_tenant(request.tenant)
         
-        result = tenant_collection.query.generate(
+        # Configure Anthropic for agent queries at query time
+        gen_config = get_anthropic_generative_config()
+        
+        result = tenant_collection.generate.near_text(
+            query=request.query,
+            limit=5,
             single_prompt=f"Answer this question based on the available documents: {request.query}",
-            limit=5
+            generative_provider=gen_config
         )
         
         response = {
