@@ -45,7 +45,7 @@ if not weaviate_client.collections.exists("Documents"):
             Property(name="content", data_type=DataType.TEXT),
             Property(name="created_date", data_type=DataType.TEXT, skip_vectorization=True),
         ],
-        vectorizer_config=Configure.Vectorizer.text2vec_weaviate()
+        vector_config=Configure.Vectorizer.text2vec_weaviate()
     )
     print("Schema 'Documents' created successfully.")
 else:
