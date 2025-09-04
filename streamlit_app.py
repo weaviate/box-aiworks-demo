@@ -5,6 +5,10 @@ import json
 from typing import List, Dict, Any
 import time
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 st.set_page_config(
     page_title="Weaviate Enterprise Search",
