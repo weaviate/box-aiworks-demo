@@ -7,12 +7,21 @@ import time
 import os
 from dotenv import load_dotenv
 
+
+import streamlit as st
+from search_functions import (
+    fetch_tenants, fetch_documents, search_documents, 
+    query_agent, filter_documents_locally
+)
+from connect_and_collection import weaviate_client
+from config import APP_TITLE, APP_ICON
+
 # Load environment variables from .env file
 load_dotenv()
 
 st.set_page_config(
-    page_title="Weaviate Enterprise Search",
-    page_icon="",
+    page_title=APP_TITLE,
+    page_icon=APP_ICON,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -117,59 +126,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-def fetch_tenants() -> List[Dict]:
-    try:
-        response = requests.get(f"{API_BASE_URL}/tenants")
-        return response.json() if response.status_code == 200 else []
-    except:
-        return []
-
-def fetch_documents(tenant: str) -> List[Dict]:
-    try:
-        response = requests.get(f"{API_BASE_URL}/documents/{tenant}")
-        return response.json() if response.status_code == 200 else []
-    except:
-        return []
-
-def search_documents(query: str, tenant: str, search_type: str, alpha: float = 0.5) -> Dict:
-    try:
-        payload = {
-            "query": query,
-            "tenant": tenant,
-            "search_type": search_type,
-            "alpha": alpha,
-            "limit": 20
-        }
-        response = requests.post(f"{API_BASE_URL}/search", json=payload)
-        return response.json() if response.status_code == 200 else {}
-    except Exception as e:
-        st.error(f"Search error: {str(e)}")
-        return {}
-
-def filter_documents_locally(documents: List[Dict], filter_text: str) -> List[Dict]:
-    if not filter_text:
-        return documents
-    
-    filter_text = filter_text.lower()
-    filtered = []
-    
-    for doc in documents:
-        content = doc.get('content', '').lower()
-        file_name = doc.get('file_name', '').lower()
-        
-        if filter_text in content or filter_text in file_name:
-            filtered.append(doc)
-    
-    return filtered
-
-def query_agent(query: str, tenant: str) -> Dict:
-    try:
-        payload = {"query": query, "tenant": tenant}
-        response = requests.post(f"{API_BASE_URL}/query-agent", json=payload)
-        return response.json() if response.status_code == 200 else {}
-    except:
-        return {}
 
 def main():
     st.markdown('<h1 class="main-header">🔍 Weaviate Enterprise Search</h1>', unsafe_allow_html=True)
@@ -335,11 +291,6 @@ def main():
             
             st.markdown(f"**Query:** {agent_resp['query']}")
             st.markdown(f"**Answer:** {agent_resp.get('answer', 'No answer available')}")
-            
-            if agent_resp.get('sources'):
-                st.subheader("📚 Sources")
-                for source in agent_resp['sources']:
-                    st.markdown(f"**{source['file_name']}:** {source['content']}")
         
         else:
             st.header(f"📄 {st.session_state.selected_tenant} Documents")
@@ -362,7 +313,7 @@ def main():
                         st.markdown(f"""
                         <div class="document-card">
                             <h4> {doc['file_name']} (Chunk {doc['chunk_index']})</h4>
-                            <p><strong>Content:</strong> {doc['content'][:300]}...</p>
+                            <p><strong>Content:</strong> {doc['content']}...</p>
                             <small>ID: {doc['id'][:8]}... | Date: {doc['created_date']}</small>
                         </div>
                         """, unsafe_allow_html=True)

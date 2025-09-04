@@ -41,31 +41,7 @@ WEAVIATE_API_KEY = os.getenv('WCD_API_KEY')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_APIKEY')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
-def get_weaviate_client():
-    try:
-        headers = {}
-
-       
-        if os.getenv("OPENAI_API_KEY"):
-            headers["X-INFERENCE-PROVIDER-API-KEY"] = os.getenv("OPENAI_API_KEY")
-        elif os.getenv("ANTHROPIC_APIKEY"):
-            headers["X-INFERENCE-PROVIDER-API-KEY"] = os.getenv("ANTHROPIC_APIKEY")
-
-       
-        if os.getenv("ANTHROPIC_APIKEY"):
-            headers["X-Anthropic-Api-Key"] = os.getenv("ANTHROPIC_APIKEY")
-        if os.getenv("OPENAI_API_KEY"):
-            headers["X-OpenAI-Api-Key"] = os.getenv("OPENAI_API_KEY")
-
-        client = weaviate.connect_to_weaviate_cloud(
-            cluster_url=WEAVIATE_URL,
-            auth_credentials=AuthApiKey(WEAVIATE_API_KEY),
-            headers=headers,
-        )
-        return client
-    except Exception as e:
-        logger.error(f"Failed to connect to Weaviate: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to connect to Weaviate: {str(e)}")
+from connect_and_collection import weaviate_client
 
 def get_anthropic_generative_config():
     return GenerativeConfig.anthropic(
@@ -111,7 +87,7 @@ async def root():
 async def get_tenants():
     client = None
     try:
-        client = get_weaviate_client()
+        client = weaviate_client
         docs = client.collections.get("Documents")
         tenants = ["HR", "Finance", "Customer-Service"]
         
@@ -147,7 +123,7 @@ async def get_tenants():
 async def get_documents(tenant: str, limit: int = 50):
     client = None
     try:
-        client = get_weaviate_client()
+        client = weaviate_client
         docs = client.collections.get("Documents")
         tenant_collection = docs.with_tenant(tenant)
         
@@ -180,7 +156,7 @@ async def get_documents(tenant: str, limit: int = 50):
 async def search_documents(request: SearchRequest):
     client = None
     try:
-        client = get_weaviate_client()
+        client = weaviate_client
         docs = client.collections.get("Documents")
         tenant_collection = docs.with_tenant(request.tenant)
         
@@ -281,7 +257,7 @@ async def search_documents(request: SearchRequest):
 async def query_agent(request: AgentRequest):
     client = None
     try:
-        client = get_weaviate_client()
+        client = weaviate_client
 
         collection_name = "Documents"
 
