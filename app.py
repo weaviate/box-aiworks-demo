@@ -7,10 +7,19 @@ import weaviate
 from weaviate.auth import AuthApiKey
 from weaviate.classes.config import Configure
 from weaviate.classes.generate import GenerativeConfig
+
 from dotenv import load_dotenv
 import os
 from datetime import datetime
 import logging
+
+
+try:
+    from weaviate.agents.query import QueryAgent
+    from weaviate.agents.classes import QueryAgentCollectionConfig
+except ImportError:
+    from weaviate_agents.query import QueryAgent
+    from weaviate_agents.classes import QueryAgentCollectionConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,18 +39,28 @@ app.add_middleware(
 WEAVIATE_URL = os.getenv('WCD_URL')
 WEAVIATE_API_KEY = os.getenv('WCD_API_KEY')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_APIKEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 def get_weaviate_client():
     try:
         headers = {}
-        if ANTHROPIC_API_KEY:
-            headers["X-Anthropic-Api-Key"] = ANTHROPIC_API_KEY
-            logger.info("Added Anthropic API key to headers")
-        
+
+       
+        if os.getenv("OPENAI_API_KEY"):
+            headers["X-INFERENCE-PROVIDER-API-KEY"] = os.getenv("OPENAI_API_KEY")
+        elif os.getenv("ANTHROPIC_APIKEY"):
+            headers["X-INFERENCE-PROVIDER-API-KEY"] = os.getenv("ANTHROPIC_APIKEY")
+
+       
+        if os.getenv("ANTHROPIC_APIKEY"):
+            headers["X-Anthropic-Api-Key"] = os.getenv("ANTHROPIC_APIKEY")
+        if os.getenv("OPENAI_API_KEY"):
+            headers["X-OpenAI-Api-Key"] = os.getenv("OPENAI_API_KEY")
+
         client = weaviate.connect_to_weaviate_cloud(
             cluster_url=WEAVIATE_URL,
             auth_credentials=AuthApiKey(WEAVIATE_API_KEY),
-            headers=headers
+            headers=headers,
         )
         return client
     except Exception as e:
@@ -263,45 +282,80 @@ async def query_agent(request: AgentRequest):
     client = None
     try:
         client = get_weaviate_client()
-        docs = client.collections.get("Documents")
-        tenant_collection = docs.with_tenant(request.tenant)
+
+        collection_name = "Documents"
+
+        agent = QueryAgent(client=client)
+
         
-        gen_config = get_anthropic_generative_config()
-        
-        result = tenant_collection.generate.near_text(
-            query=request.query,
-            limit=5,
-            single_prompt=f"Answer this question based on the available documents: {request.query}",
-            generative_provider=gen_config
+        cfg = QueryAgentCollectionConfig(
+            name=collection_name,
+            tenant=request.tenant,
+            view_properties=["content", "file_name", "created_date"]
         )
-        
-        response = {
+
+        response = agent.run(
+            request.query,
+            collections=[cfg]
+        )
+
+        # Hydrate sources using existing props only
+        hydrated_sources = []
+        try:
+            for src in response.sources[:10]:
+                # QueryAgent can touch multiple collections; re-scope per source
+                coll = client.collections.get(src.collection).with_tenant(request.tenant)
+                obj = coll.query.fetch_object_by_id(src.object_id)
+                props = obj.properties or {}
+                hydrated_sources.append({
+                    "collection": src.collection,
+                    "id": src.object_id,
+                    "content": (props.get("content") or "")[:500],
+                    "file_name": props.get("file_name"),
+                    "created_date": props.get("created_date"),
+                    "chunk_index": props.get("chunk_index"),
+                    "file_id": props.get("file_id"),
+                })
+        except Exception as hydrate_err:
+            logger.warning(f"Source hydration failed: {hydrate_err}")
+
+        result = {
             "query": request.query,
             "tenant": request.tenant,
-            "answer": "Agent response would go here",
-            "sources": []
+            "answer": response.final_answer,
+            "collections": getattr(response, "collection_names", None),
+            "usage": {
+                "requests": getattr(getattr(response, "usage", None), "requests", None),
+                "request_tokens": getattr(getattr(response, "usage", None), "request_tokens", None),
+                "response_tokens": getattr(getattr(response, "usage", None), "response_tokens", None),
+                "total_tokens": getattr(getattr(response, "usage", None), "total_tokens", None),
+                "total_time_sec": getattr(response, "total_time", None),
+            },
+            "searches": [
+                {"collection": q.collection, "queries": q.queries}
+                for group in getattr(response, "searches", []) for q in group
+            ],
+            "aggregations": [
+                {"collection": a.collection, "search_query": a.search_query}
+                for group in getattr(response, "aggregations", []) for a in group
+            ],
+            "sources": hydrated_sources,
         }
-        
-        for obj in result.objects:
-            properties = obj.properties or {}
-            response["sources"].append({
-                "content": properties.get("content", "")[:200] + "...",
-                "file_name": properties.get("file_name", "Unknown")
-            })
-        
-        logger.info(f"Agent query completed for: {request.query}")
-        return response
-        
+
+        logger.info(f"Query Agent completed for: {request.query} (tenant={request.tenant})")
+        return result
+
     except Exception as e:
         logger.error(f"Error in query_agent: {e}")
-        raise HTTPException(status_code=500, detail=f"Agent query error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Query Agent error: {str(e)}")
     finally:
         if client:
             try:
                 client.close()
             except:
-                pass
-
+                pass        
+            
+            
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
