@@ -42,7 +42,7 @@ def get_anthropic_generative_config():
     """Get Anthropic generative configuration"""
     return GenerativeConfig.anthropic(
         model="claude-3-opus-20240229",
-        max_tokens=512,
+        max_tokens=256,  # Reduced back to 256 for faster response
         temperature=0.7,
     )
 
@@ -159,43 +159,89 @@ def search_documents(query: str, tenant: str, search_type: str, alpha: float = 0
             )
             
         elif search_type == "generative":
-            gen_config = get_anthropic_generative_config()
-            
-            result = tenant_collection.generate.near_text(
-                query=query,
-                limit=20,
-                single_prompt=f"Based on the following context, answer the question: {query}",
-                grouped_task="Summarize the key points from the search results",
-                generative_provider=gen_config
-            )
-            
-            if hasattr(result, 'generated') and result.generated:
-                generated_text = result.generated
-                documents = [{
-                    "id": "generated_response",
-                    "content": generated_text,
-                    "file_name": "AI Generated Response",
-                    "chunk_index": 0,
-                    "created_date": datetime.now().strftime("%Y-%m-%d"),
-                    "score": 1.0
-                }]
-            else:
-                documents = [{
-                    "id": "no_response",
-                    "content": "No response generated",
-                    "file_name": "No Response",
-                    "chunk_index": 0,
-                    "created_date": datetime.now().strftime("%Y-%m-%d"),
-                    "score": 0.0
-                }]
-            
-            logger.info(f"Generative search completed: Generated response only")
-            return {
-                "documents": documents,
-                "total_count": len(documents),
-                "search_type": search_type,
-                "query": query
-            }
+            try:
+                gen_config = get_anthropic_generative_config()
+                
+                # Reduce the limit and add timeout handling
+                result = tenant_collection.generate.near_text(
+                    query=query,
+                    limit=5,  # Reduced from 20 to 5
+                    single_prompt=f"Based on the following context, answer the question: {query}",
+                    grouped_task="Summarize the key points from the search results",
+                    generative_provider=gen_config
+                )
+                
+                if hasattr(result, 'generated') and result.generated:
+                    generated_text = result.generated
+                    documents = [{
+                        "id": "generated_response",
+                        "content": generated_text,
+                        "file_name": "AI Generated Response",
+                        "chunk_index": 0,
+                        "created_date": datetime.now().strftime("%Y-%m-%d"),
+                        "score": 1.0
+                    }]
+                else:
+                    # Fallback to regular search if generation fails
+                    st.warning("Generative search failed, falling back to hybrid search")
+                    result = tenant_collection.query.hybrid(
+                        query=query,
+                        alpha=0.5,
+                        limit=10
+                    )
+                    
+                    documents = []
+                    for i, obj in enumerate(result.objects):
+                        properties = obj.properties or {}
+                        documents.append({
+                            "id": str(obj.uuid),
+                            "content": properties.get("content", "No content available"),
+                            "file_name": f"Search_Result_{i+1}",
+                            "chunk_index": i,
+                            "created_date": "2024-01-01",
+                            "score": getattr(obj, 'score', None)
+                        })
+                
+                logger.info(f"Generative search completed: {len(documents)} results")
+                return {
+                    "documents": documents,
+                    "total_count": len(documents),
+                    "search_type": search_type,
+                    "query": query
+                }
+                
+            except Exception as gen_error:
+                logger.warning(f"Generative search failed: {gen_error}, falling back to hybrid search")
+                # Fallback to hybrid search
+                try:
+                    result = tenant_collection.query.hybrid(
+                        query=query,
+                        alpha=0.5,
+                        limit=10
+                    )
+                    
+                    documents = []
+                    for i, obj in enumerate(result.objects):
+                        properties = obj.properties or {}
+                        documents.append({
+                            "id": str(obj.uuid),
+                            "content": properties.get("content", "No content available"),
+                            "file_name": f"Search_Result_{i+1}",
+                            "chunk_index": i,
+                            "created_date": "2024-01-01",
+                            "score": getattr(obj, 'score', None)
+                        })
+                    
+                    return {
+                        "documents": documents,
+                        "total_count": len(documents),
+                        "search_type": "hybrid",  # Changed to hybrid since generation failed
+                        "query": query
+                    }
+                except Exception as fallback_error:
+                    logger.error(f"Fallback search also failed: {fallback_error}")
+                    st.error(f"Search failed: {str(fallback_error)}")
+                    return {}
             
         else:
             st.error("Invalid search type")
