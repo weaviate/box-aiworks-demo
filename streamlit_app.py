@@ -4,6 +4,7 @@ import requests
 import json
 from typing import List, Dict, Any
 import time
+import os
 
 st.set_page_config(
     page_title="Weaviate Enterprise Search",
@@ -12,7 +13,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-API_BASE_URL = "http://localhost:8000"
+# Get API URL from environment variable or use default
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 st.markdown("""
 <style>
