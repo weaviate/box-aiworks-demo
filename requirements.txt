@@ -1,4 +1,7 @@
+streamlit==1.28.1
 weaviate-client[agents]==4.16.9
 box-sdk-gen
 requests
 python-dotenv
+pydantic>=2.8.0
+python-multipart==0.0.6
