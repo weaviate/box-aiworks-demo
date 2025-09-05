@@ -28,10 +28,8 @@ Operating expenses increased as we invested in brand marketing ahead of the holi
 | **Net Income**             | **$292,300** | **$398,950** | **$525,350** | **$675,450** | **$1,892,050** |
 
 ## Risks and Outlook
-Key risks include:
-- Foreign exchange volatility  
-- Continued freight variability  
-- Demand softness tied to macroeconomic conditions  
+Key risks include foreign exchange volatility, continued freight variability, and demand softness tied to macroeconomic conditions. We will monitor inventory closely, continue diversifying suppliers, and scale our loyalty program to stabilize repeat purchase behavior. 
 
-We will monitor inventory closely, continue diversifying suppliers, and scale our loyalty program to stabilize repeat purchase behavior. Our 2025 plan assumes modest revenue growth with steady gross margin and disciplined OpEx.
+Our 2025 plan assumes modest revenue growth with steady gross margin and disciplined OpEx.
+
 

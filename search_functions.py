@@ -46,7 +46,7 @@ def get_anthropic_generative_config():
         # temperature=0.7,
     )
 
-@st.cache_data(ttl=300)  # Cache for 5 minutes
+# @st.cache_data(ttl=300)  # Cache for 5 minutes
 def fetch_tenants() -> List[Dict]:
     """Fetch available tenants from Weaviate"""
     client = None
@@ -55,7 +55,7 @@ def fetch_tenants() -> List[Dict]:
         if not client:
             return []
             
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenants = DEFAULT_TENANTS
         
         tenant_info = []
@@ -96,7 +96,7 @@ def fetch_documents(tenant: str) -> List[Dict]:
         if not client:
             return []
             
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenant_collection = docs.with_tenant(tenant)
         
         result = tenant_collection.query.fetch_objects(limit=50)
@@ -133,7 +133,7 @@ def search_documents(query: str, tenant: str, search_type: str, alpha: float = 0
         if not client:
             return {}
             
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenant_collection = docs.with_tenant(tenant)
         
         documents = []

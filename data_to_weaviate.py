@@ -34,6 +34,7 @@ multi_collection = weaviate_client.collections.get("BoxDocuments")
 # Path to the parent folder that contains the 5 subfolders
 parent_folder = "data"
 
+
 def clean_md(md: str) -> str:
     md = md.replace("\r\n", "\n").replace("\r", "\n").strip()
     # remove **bold**
