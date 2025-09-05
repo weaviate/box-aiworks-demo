@@ -43,7 +43,7 @@ def get_anthropic_generative_config():
     return GenerativeConfig.anthropic(
         model="claude-3-opus-20240229",
         max_tokens=256,  # Reduced back to 256 for faster response
-        temperature=0.7,
+        # temperature=0.7,
     )
 
 @st.cache_data(ttl=300)  # Cache for 5 minutes
@@ -166,8 +166,7 @@ def search_documents(query: str, tenant: str, search_type: str, alpha: float = 0
                 result = tenant_collection.generate.near_text(
                     query=query,
                     limit=5,  # Reduced from 20 to 5
-                    single_prompt=f"Based on the following context, answer the question: {query}",
-                    grouped_task="Summarize the key points from the search results",
+                    grouped_task="Provide a complete response to the users query",
                     generative_provider=gen_config
                 )
                 
