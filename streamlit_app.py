@@ -228,113 +228,6 @@ div.stTextInput label {
 """, unsafe_allow_html=True)
 
 
-# st.markdown("""
-# <style>
-#     /* Page background */
-#     [data-testid="stAppViewContainer"] {
-#         background-image: url("https://images.unsplash.com/photo-1501426026826-31c667bdf23d");
-#         background-size: cover;
-#         background-repeat: no-repeat;
-#         background-position: center;
-#     }
-
-
-#     .main-header {
-#         font-size: 3rem;
-#         font-weight: bold;
-#         text-align: center;
-#         margin-bottom: 2rem;
-#         color: black !important;
-#         background: none
-#         -webkit-background-clip: text;
-#         -webkit-text-fill-color: black !important;
-#     }
-#     .tenant-card {
-#         padding: 2rem;
-#         border-radius: 15px;
-#         color: white;
-#         text-align: center;
-#         cursor: pointer;
-#         transition: transform 0.3s;
-#         margin: 1rem 0;
-#     }
-#     .tenant-card:hover {
-#         transform: translateY(-5px);
-#     }
-#     .search-container {
-#         background: #f8f9fa;
-#         padding: 2rem;
-#         border-radius: 15px;
-#         margin: 2rem 0;
-#     }
-#     .document-card {
-#         background: #ffffff;
-#         padding: 1.5rem;
-#         border-radius: 10px;
-#         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-#         margin: 1rem 0;
-#         border-left: 4px solid #667eea;
-#         color: #000000 !important;
-#     }
-#     .document-card h4 {
-#         color: #1a1a1a !important;
-#         margin-bottom: 1rem;
-#         font-size: 1.2rem;
-#         font-weight: bold;
-#     }
-#     .document-card p {
-#         color: #2d2d2d !important;
-#         line-height: 1.6;
-#         margin-bottom: 0.5rem;
-#         font-size: 1rem;
-#     }
-#     .document-card small {
-#         color: #4a4a4a !important;
-#         font-size: 0.9rem;
-#     }
-#     .document-card strong {
-#         color: #1a1a1a !important;
-#         font-weight: bold;
-#     }
-#     .search-type-badge {
-#         display: inline-block;
-#         padding: 0.25rem 0.75rem;
-#         border-radius: 20px;
-#         font-size: 0.8rem;
-#         font-weight: bold;
-#         margin: 0.25rem;
-#     }
-#     .keyword { background: #e3f2fd; color: #1976d2; }
-#     .vector { background: #f3e5f5; color: #7b1fa2; }
-#     .hybrid { background: #e8f5e8; color: #388e3c; }
-#     .generative { background: #fff3e0; color: #f57c00; }
-    
-#     .document-card * {
-#         color: #2d2d2d !important;
-#     }
-    
-#     .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp h5, .stApp h6 {
-#         color: white !important;
-#     }
-    
-#     .stSidebar h1, .stSidebar h2, .stSidebar h3, .stSidebar h4, .stSidebar h5, .stSidebar h6 {
-#         color: #334155 !important;
-#     }
-    
-#     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3, .stMarkdown h4, .stMarkdown h5, .stMarkdown h6 {
-#         color: white !important;
-#     }
-    
-#     .document-card h1, .document-card h2, .document-card h3, .document-card h4, .document-card h5, .document-card h6 {
-#         color: #1a1a1a !important;
-#     }
-    
-#     .stMarkdown p {
-#         color: #2d2d2d !important;
-#     }
-# </style>
-# """, unsafe_allow_html=True)
-
 def main():
 
     left, right = st.columns([0.25, 0.75])
@@ -383,7 +276,7 @@ def main():
                 "Alpha Parameter",
                 min_value=0.0,
                 max_value=1.0,
-                value=0.5,
+                value=0.75,
                 step=0.1,
                 help="0.0 = pure keyword search, 1.0 = pure vector search"
             )
@@ -554,11 +447,22 @@ def main():
                     with st.container():
                         st.markdown(f"""
                         <div class="document-card">
-                            <h4> {doc['file_name']} (Chunk {doc['chunk_index']})</h4>
-                            <p><strong>Content:</strong> {doc['content']}...</p>
+                            <h4>{doc['file_name']} (Chunk {doc['chunk_index']})</h4>
+                            <p><strong>Content:</strong></p>
+                            <div style="list-style: none; margin-left: 0; padding-left: 0;">
+                                {doc['content']}
+                            </div>
                             <small>ID: {doc['id'][:8]}... | Date: {doc['created_date']}</small>
                         </div>
                         """, unsafe_allow_html=True)
+
+                        # st.markdown(f"""
+                        # <div class="document-card">
+                        #     <h4> {doc['file_name']} (Chunk {doc['chunk_index']})</h4>
+                        #     <p><strong>Content:</strong> {doc['content']}...</p>
+                        #     <small>ID: {doc['id'][:8]}... | Date: {doc['created_date']}</small>
+                        # </div>
+                        # """, unsafe_allow_html=True)
                 
                 if len(filtered_documents) > 10:
                     st.info(f"Showing first 10 of {len(filtered_documents)} filtered documents.")
@@ -568,7 +472,7 @@ def main():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #ffffff; padding: 2rem;">
-        <p> Powered by <strong>Weaviate</strong> | Built with <strong>FastAPI</strong> & <strong>Streamlit</strong></p>
+        <p> Powered by <strong>Box and Weaviate</strong> | Built with <strong>Streamlit</strong></p>
         <p>Features: Keyword Search | Vector Search | Hybrid Search | Generative AI | Query Agent</p>
     </div>
     """, unsafe_allow_html=True)

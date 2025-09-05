@@ -88,7 +88,7 @@ async def get_tenants():
     client = None
     try:
         client = weaviate_client
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenants = ["HR", "Finance", "Customer-Service"]
         
         tenant_info = []
@@ -124,7 +124,7 @@ async def get_documents(tenant: str, limit: int = 50):
     client = None
     try:
         client = weaviate_client
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenant_collection = docs.with_tenant(tenant)
         
         result = tenant_collection.query.fetch_objects(limit=limit)
@@ -157,7 +157,7 @@ async def search_documents(request: SearchRequest):
     client = None
     try:
         client = weaviate_client
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenant_collection = docs.with_tenant(request.tenant)
         
         documents = []

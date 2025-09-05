@@ -60,3 +60,27 @@ docs.tenants.create([
 ])
 
 print("Tenants created successfully.")
+
+if not weaviate_client.collections.exists("BoxDocuments"):
+    weaviate_client.collections.create(
+        name="BoxDocuments",
+        multi_tenancy_config=Configure.multi_tenancy(enabled=True),
+        
+        properties=[
+            Property(name="content", data_type=DataType.TEXT),
+        ],
+        vector_config=Configure.Vectors.text2vec_weaviate()
+    )
+    print("Schema 'BoxDocuments' created successfully.")
+else:
+    print("Schema 'BoxDocuments' already exists.")
+
+docs = weaviate_client.collections.get("BoxDocuments")
+
+docs.tenants.create([
+    Tenant(name="HR"),
+    Tenant(name="Finance"),
+    Tenant(name="Customer-Service")
+])
+
+print("Tenants created successfully.")

@@ -43,10 +43,10 @@ def get_anthropic_generative_config():
     return GenerativeConfig.anthropic(
         model="claude-3-opus-20240229",
         max_tokens=256,  # Reduced back to 256 for faster response
-        temperature=0.7,
+        # temperature=0.7,
     )
 
-@st.cache_data(ttl=300)  # Cache for 5 minutes
+# @st.cache_data(ttl=300)  # Cache for 5 minutes
 def fetch_tenants() -> List[Dict]:
     """Fetch available tenants from Weaviate"""
     client = None
@@ -55,7 +55,7 @@ def fetch_tenants() -> List[Dict]:
         if not client:
             return []
             
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenants = DEFAULT_TENANTS
         
         tenant_info = []
@@ -87,7 +87,7 @@ def fetch_tenants() -> List[Dict]:
             except:
                 pass
 
-@st.cache_data(ttl=300)
+# @st.cache_data(ttl=300)
 def fetch_documents(tenant: str) -> List[Dict]:
     """Fetch documents for a specific tenant"""
     client = None
@@ -96,7 +96,7 @@ def fetch_documents(tenant: str) -> List[Dict]:
         if not client:
             return []
             
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenant_collection = docs.with_tenant(tenant)
         
         result = tenant_collection.query.fetch_objects(limit=50)
@@ -133,7 +133,7 @@ def search_documents(query: str, tenant: str, search_type: str, alpha: float = 0
         if not client:
             return {}
             
-        docs = client.collections.get("Documents")
+        docs = client.collections.get("BoxDocuments")
         tenant_collection = docs.with_tenant(tenant)
         
         documents = []
@@ -142,32 +142,38 @@ def search_documents(query: str, tenant: str, search_type: str, alpha: float = 0
         if search_type == "keyword":
             result = tenant_collection.query.bm25(
                 query=query,
-                limit=20
+                limit=5
             )
             
         elif search_type == "vector":
             result = tenant_collection.query.near_text(
                 query=query,
-                limit=20
+                limit=5
             )
             
         elif search_type == "hybrid":
             result = tenant_collection.query.hybrid(
                 query=query,
                 alpha=alpha,
-                limit=20
+                limit=5
             )
             
         elif search_type == "generative":
             try:
                 gen_config = get_anthropic_generative_config()
+
+                gen_task = """
+                    Provide a clear and concise answer to the users request. 
+                    Write in natural sentences without using bullet points or numbered lists. 
+                    Do not add introductory or filler phrases—respond directly with helpful content only.
+                    Please separate out the sentences into two or three short paragraphs so it is readable.
+                """
                 
                 # Reduce the limit and add timeout handling
                 result = tenant_collection.generate.near_text(
                     query=query,
                     limit=5,  # Reduced from 20 to 5
-                    single_prompt=f"Based on the following context, answer the question: {query}",
-                    grouped_task="Summarize the key points from the search results",
+                    grouped_task=gen_task,
                     generative_provider=gen_config
                 )
                 
@@ -216,8 +222,8 @@ def search_documents(query: str, tenant: str, search_type: str, alpha: float = 0
                 try:
                     result = tenant_collection.query.hybrid(
                         query=query,
-                        alpha=0.5,
-                        limit=10
+                        alpha=0.75,
+                        limit=5
                     )
                     
                     documents = []
