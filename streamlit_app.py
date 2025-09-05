@@ -6,8 +6,8 @@ from typing import List, Dict, Any
 import time
 
 st.set_page_config(
-    page_title="Weaviate Enterprise Search",
-    page_icon="",
+    page_title="Summit Sports",
+    page_icon="images/logo.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -166,7 +166,15 @@ def query_agent(query: str, tenant: str) -> Dict:
         return {}
 
 def main():
-    st.markdown('<h1 class="main-header">🔍 Weaviate Enterprise Search</h1>', unsafe_allow_html=True)
+    # Replace this:
+# st.markdown('<h1 class="main-header">Summit Sports</h1>', unsafe_allow_html=True)
+
+# With this:
+    left, right = st.columns([0.1, 0.9])
+    with left:
+        st.image("images/logo.png", use_container_width=False)
+    with right:
+        st.markdown('<h1 class="main-header">Summit Sports</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; font-size: 1.2rem; color: #666;">Advanced Search & AI-Powered Document Discovery</p>', unsafe_allow_html=True)
     
     if 'selected_tenant' not in st.session_state:
