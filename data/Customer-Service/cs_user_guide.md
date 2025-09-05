@@ -1,5 +1,4 @@
 # Customer Service: ProRacquet 3000 User Guide
-**Summit Sports Co. · "Gear up for every adventure."**
 
 ## Introduction
 Thank you for choosing the Summit ProRacquet 3000. This racket is engineered for intermediate to advanced players who value a blend of precision, controllable power, and arm comfort. The carbon-fiber layup and tuned beam profile provide stability through contact while keeping maneuverability high for quick exchanges at the net.

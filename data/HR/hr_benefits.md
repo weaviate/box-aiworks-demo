@@ -1,5 +1,4 @@
 # HR Benefits Overview
-**Summit Sports Co. · "Gear up for every adventure."**
 
 ## Benefits Philosophy
 Summit’s benefits are designed to support your health, financial security, and work-life balance. We benchmark annually against companies of similar size and adjust to remain competitive. The information below summarizes our current offerings; official plan documents govern in case of discrepancies.
@@ -32,5 +31,3 @@ Summit’s benefits are designed to support your health, financial security, and
 - Benefits eligibility typically begins on your start date.  
 - You must enroll or waive coverage within your initial enrollment window.  
 - Otherwise, you must wait until the next open enrollment period unless a qualifying life event occurs.  
-- Details and plan documents are available in Box under **HR > Benefits**.  
-

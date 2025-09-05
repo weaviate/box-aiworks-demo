@@ -1,5 +1,4 @@
 # Finance: FY2024 Profit & Loss
-**Summit Sports Co. · "Gear up for every adventure."**
 
 ## Management Discussion and Analysis
 Fiscal year 2024 closed with strong top-line growth driven by continued demand in North America and improved sell-through in Europe. Direct-to-consumer channels outpaced wholesale for the third consecutive quarter as we expanded our e-commerce footprint and refined paid acquisition. Gross margin improved sequentially due to lower freight rates and a favorable product mix skewing toward higher-margin rackets and premium accessories.

@@ -1,5 +1,4 @@
 # HR Onboarding Guide
-**Summit Sports Co. · "Gear up for every adventure."**
 
 ## Welcome
 Welcome to Summit Sports Co.! This guide is designed to give you clarity in your first 90 days so you can build momentum quickly. We sell premium sporting equipment to athletes and retailers worldwide, and every role—whether in HR, Finance, Engineering, or Customer Service—contributes directly to that mission.  

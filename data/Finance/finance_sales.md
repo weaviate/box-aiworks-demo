@@ -1,5 +1,4 @@
 # Finance: 2024 Sales Statement
-**Summit Sports Co. · "Gear up for every adventure."**
 
 ## Overview
 Sales in 2024 were broadly diversified across regions and channels.  

@@ -1,5 +1,4 @@
 # HR Exit & Offboarding
-**Summit Sports Co. · "Gear up for every adventure."**
 
 ## Overview
 This offboarding guide covers voluntary resignations and involuntary separations.  

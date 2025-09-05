@@ -1,5 +1,4 @@
 # Customer Service: Cancellation & Return Policy
-**Summit Sports Co. · "Gear up for every adventure."**
 
 ## Policy Overview
 We want you to love your purchase. Unused items in original condition can be returned within 30 days of delivery for a full refund. Customized products—such as engraved frames or custom string jobs—are not returnable unless defective. This policy operates alongside our product warranty, which covers manufacturing defects.
